@@ -1,0 +1,15 @@
+{
+  "name": "migrate-tags",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "migrate": "node commands/migrate.js",
+    "pending": "node commands/pending.js",
+    "summary": "node commands/summary.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "mongodb": "^5.7.0",
+    "winston": "^3.12.0"
+  }
+}
