@@ -20,7 +20,6 @@ async function connect() {
     return db;
   } catch (err) {
     logger.error('❌ MongoDB connection failed:', err);
-    process.exit(1);
   }
 }
 

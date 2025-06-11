@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "migrate": "node commands/migrate.js",
+    "migrate": "node commands/start.js",
     "pending": "node commands/pending.js",
     "summary": "node commands/summary.js"
   },
