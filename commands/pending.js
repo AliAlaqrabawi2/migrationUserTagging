@@ -1,10 +1,10 @@
-const { connect } = require('../db');
+const { getDB } = require('../db');
 const logger = require('../logger');
 
-(async () => {
+async function getPendingCount() {
   try {
-    const db = await connect();
-    const usersCollection = db.collection('users_clone');
+    const db =  getDB();
+    const usersCollection = db.collection(process.env.COLLECTION_NAME);
     
     const count = await usersCollection.countDocuments({
       tags: { $exists: true },
@@ -14,10 +14,12 @@ const logger = require('../logger');
       }
     });
     
-    logger.error(`🟡 Pending users to migrate: ${count}`);
-    process.exit(0);
+    logger.error(`🟡 Total to be migrated is: ${count}`);
+    return count;
   } catch (err) {
     logger.error(`❌ Failed to get pending count: ${err.message}`);
-    process.exit(1);
+    throw err;
   }
-})();
+}
+
+module.exports = { getPendingCount };
