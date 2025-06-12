@@ -30,7 +30,6 @@ async function migrateTagsToTagsArray(migrationCount) {
           
           {
             projection: {
-              username: 1,
               _id: 1,
               tags: 1,
             }
@@ -57,6 +56,7 @@ async function migrateTagsToTagsArray(migrationCount) {
           });
         }
       }
+      
       bulkOps.push({
         updateOne: {
           filter: {_id: user._id},
@@ -80,12 +80,7 @@ async function migrateTagsToTagsArray(migrationCount) {
             erroredIds.push(failedOp.updateOne.filter._id);
             erroredResponses.push(writeError.errmsg);
           }
-        } else {
-          bulkOps.forEach(op => {
-            erroredIds.push(op.updateOne.filter._id);
-          });
         }
-        
         totalSkipped += erroredIds.length;
         totalUpdated += bulkOps.length - erroredIds.length;
         const errorData = {
