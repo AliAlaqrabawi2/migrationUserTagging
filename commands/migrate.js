@@ -21,7 +21,7 @@ async function migrateTagsToTagsArray(migrationCount) {
       users = await usersCollection.find(
           {
             tagsArray: { $exists: false },
-            tags: { $exists: true },
+            tags: { $exists: true, $ne: null },
             externalAppsArray: {
               $elemMatch: { externalAppId: { $exists: true, $ne: null } }
             },
@@ -88,18 +88,18 @@ async function migrateTagsToTagsArray(migrationCount) {
           errored_responses: erroredResponses
         };
         logger.error(`❌ Bulk write failed for ${erroredIds.length} users: ${bulkErr.stack}`);
-        
+
         const filePath = path.join(__dirname, 'error_userIDs.json');
           fs.writeFileSync(filePath, JSON.stringify(errorData, null, 2), 'utf-8');
-        
+
       }
     }
   }
-  
+
   const errorPercentage = ((totalSkipped / migrationCount) * 100).toFixed(4);
   logger.info(`🎯 Migration complete. Successfully migrated ${totalUpdated}/${migrationCount} (${((totalUpdated / migrationCount) * 100).toFixed(4)}%)`);
   logger.info(`Errored for ${totalSkipped}/${migrationCount} (${errorPercentage}%)`);
-  
+
   return totalUpdated;
 }
 
