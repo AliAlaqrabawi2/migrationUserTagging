@@ -1,5 +1,4 @@
 const { migrateTagsToTagsArray } = require('./migrate');
-const { getPendingCount } =require('./pending')
 const logger = require('../logger');
 const {connect} = require("../db");
 

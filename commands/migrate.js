@@ -19,7 +19,7 @@ async function migrateTagsToTagsArray() {
     try {
       users = await usersCollection.find(
         {
-          _migrated: true,
+          _migrated: { $exists: false },
           _id: { $nin: erroredIds }
         },
         {
@@ -53,19 +53,28 @@ async function migrateTagsToTagsArray() {
         }
       }
       
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: user._id },
-          update: { $set: { tagsArray, _migrated: true } }
-        }
-      });
+      if (tagsArray.length > 0) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: user._id },
+            update: { $set: { tagsArray, _migrated: true } }
+          }
+        });
+      } else {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: user._id },
+            update: { $set: { _migrated: true } }
+          }
+        });
+      }
     }
     
     if (bulkOps.length > 0) {
       try {
         await usersCollection.bulkWrite(bulkOps, { ordered: false });
         totalUpdated += bulkOps.length;
-        logger.info(`✅ ${totalUpdated} users updated so far.`);
+        logger.info(`✅ ${totalUpdated} users updated.`);
       } catch (bulkErr) {
         if (bulkErr && bulkErr.writeErrors) {
           for (const writeError of bulkErr.writeErrors) {
