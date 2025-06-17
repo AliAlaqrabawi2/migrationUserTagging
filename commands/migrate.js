@@ -3,10 +3,9 @@ const logger = require('../logger');
 const fs = require('fs');
 const path = require('path');
 
-
 const BATCH_SIZE = process.env.BATCH_SIZE;
 
-async function migrateTagsToTagsArray(migrationCount) {
+async function migrateTagsToTagsArray() {
   const db = getDB();
   const usersCollection = db.collection(process.env.COLLECTION_NAME);
   
@@ -19,59 +18,54 @@ async function migrateTagsToTagsArray(migrationCount) {
     let users;
     try {
       users = await usersCollection.find(
-          {
-            tagsArray: { $exists: false },
-            tags: { $exists: true, $ne: null },
-            externalAppsArray: {
-              $elemMatch: { externalAppId: { $exists: true, $ne: null } }
-            },
-            _id: { $nin: erroredIds }
-          },
-          
-          {
-            projection: {
-              _id: 1,
-              tags: 1,
-            }
+        {
+          _migrated: true,
+          _id: { $nin: erroredIds }
+        },
+        {
+          projection: {
+            _id: 1,
+            tags: 1,
           }
+        }
       ).limit(Number(BATCH_SIZE)).toArray();
     } catch (err) {
       logger.error(`❌ Failed to fetch users batch: ${err.stack}`);
       continue;
     }
-
+    
     if (!users || users.length === 0) break;
     
     const bulkOps = [];
-
+    
     for (const user of users) {
       const tagsArray = [];
       
-      for (const [appId, tagsList] of Object.entries(user.tags)) {
-        if (Array.isArray(tagsList)) {
-          tagsList.forEach(tag => {
-            if (tag && tag.tagName) {
-              tagsArray.push({appId, ...tag});
-            }
-          });
+      if (user.tags && typeof user.tags === 'object') {
+        for (const [appId, tagsList] of Object.entries(user.tags)) {
+          if (Array.isArray(tagsList)) {
+            tagsList.forEach(tag => {
+              if (tag && tag.tagName) {
+                tagsArray.push({ appId, ...tag });
+              }
+            });
+          }
         }
       }
       
       bulkOps.push({
         updateOne: {
-          filter: {_id: user._id},
-          update: {$set: {tagsArray}}
+          filter: { _id: user._id },
+          update: { $set: { tagsArray, _migrated: true } }
         }
       });
     }
-
+    
     if (bulkOps.length > 0) {
       try {
         await usersCollection.bulkWrite(bulkOps, { ordered: false });
         totalUpdated += bulkOps.length;
-        
-        const percentage = ((totalUpdated / migrationCount) * 100).toFixed(4);
-        logger.info(`✅ Successfully migrated ${totalUpdated}/${migrationCount} (${percentage}%)`);
+        logger.info(`✅ ${totalUpdated} users updated so far.`);
       } catch (bulkErr) {
         if (bulkErr && bulkErr.writeErrors) {
           for (const writeError of bulkErr.writeErrors) {
@@ -88,18 +82,16 @@ async function migrateTagsToTagsArray(migrationCount) {
           errored_responses: erroredResponses
         };
         logger.error(`❌ Bulk write failed for ${erroredIds.length} users: ${bulkErr.stack}`);
-
+        
         const filePath = path.join(__dirname, 'error_userIDs.json');
-          fs.writeFileSync(filePath, JSON.stringify(errorData, null, 2), 'utf-8');
-
+        fs.writeFileSync(filePath, JSON.stringify(errorData, null, 2), 'utf-8');
       }
     }
   }
-
-  const errorPercentage = ((totalSkipped / migrationCount) * 100).toFixed(4);
-  logger.info(`🎯 Migration complete. Successfully migrated ${totalUpdated}/${migrationCount} (${((totalUpdated / migrationCount) * 100).toFixed(4)}%)`);
-  logger.info(`Errored for ${totalSkipped}/${migrationCount} (${errorPercentage}%)`);
-
+  
+  logger.info(`🎯 Migration complete. Total users updated: ${totalUpdated}`);
+  logger.info(`Errored for ${totalSkipped} users.`);
+  
   return totalUpdated;
 }
 

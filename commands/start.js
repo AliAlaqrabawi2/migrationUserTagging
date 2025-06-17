@@ -6,8 +6,7 @@ const {connect} = require("../db");
 (async () => {
   try {
     await connect();
-    const count = await getPendingCount();
-    const updated = await migrateTagsToTagsArray(count);
+    const updated = await migrateTagsToTagsArray();
     logger.info(`🎯 Migration completed. Total users updated: ${updated}`);
     process.exit(0);
   } catch (err) {

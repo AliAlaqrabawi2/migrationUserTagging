@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node commands/start.js",
-    "getPendingCount": "node commands/migrationUsersCount.js"
+    "sanitize": "node commands/sanitizeUsersDoc.js"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
