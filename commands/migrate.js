@@ -20,6 +20,9 @@ async function migrateTagsToTagsArray() {
       users = await usersCollection.find(
         {
           _migrated: { $exists: false },
+          externalAppsArray: {
+            $elemMatch: { externalAppId: { $exists: true, $ne: null } }
+          },
           _id: { $nin: erroredIds }
         },
         {

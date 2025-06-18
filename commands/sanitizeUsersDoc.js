@@ -9,7 +9,13 @@ const {connect, getDB} = require("../db");
   
   try {
     const result = await usersCollection.updateMany(
-      { _migrated: { $exists: true } },
+      {
+        _migrated: { $exists: true },
+        externalAppsArray: {
+          $elemMatch: { externalAppId: { $exists: true, $ne: null } }
+        },
+      },
+      
       { $unset: { _migrated: "" } }
     );
     
